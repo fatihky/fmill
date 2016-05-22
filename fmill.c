@@ -174,7 +174,7 @@ wait_in:
     if (nread < 0) {
       printf ("[fmill] read failed\n");
       printf ("nread: %zd\n", nread);
-      printf ("errno: %d\n", errno);
+      printf ("errno: %d %s\n", errno, strerror (errno));
       assert (0 && "handle nread < 0");
     }
 
@@ -245,7 +245,7 @@ wait_out:
     if (nwritten < 0) {
       printf ("[fmill] write failed\n");
       printf ("nwritten: %zd\n", nwritten);
-      printf ("errno: %d\n", errno);
+      printf ("errno: %d %s\n", errno, strerror (errno));
       assert (0 && "handle nwritten < 0");
     }
 
