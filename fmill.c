@@ -50,8 +50,8 @@ struct tmp_mill_sockbase {
   int fd;
 };
 
-static coroutine tcpframer (fmill_sock self);
-static coroutine tcpframesender (fmill_sock self);
+static coroutine void tcpframer (fmill_sock self);
+static coroutine void tcpframesender (fmill_sock self);
 
 static int millsockfd(void *sock) {
   return ((struct tmp_mill_sockbase *)sock)->fd;
@@ -122,7 +122,7 @@ void fmill_sock_free (fmill_sock self) {
   free (self);
 }
 
-static coroutine tcpacceptor(fmill_sock self) {
+static coroutine void tcpacceptor(fmill_sock self) {
   printf ("start accepting\n");
   for (; self->active;) {
     tcpsock sock = tcpaccept (self->msock, now() + 10000);
@@ -144,7 +144,7 @@ static coroutine tcpacceptor(fmill_sock self) {
   printf ("stopped accepting\n");
 }
 
-static coroutine tcpframer (fmill_sock self) {
+static coroutine void tcpframer (fmill_sock self) {
   int fd = millsockfd((void *)self->msock);
 
 wait_in:
@@ -208,7 +208,7 @@ complete:
   printf ("tcpframer routine complete\n");
 }
 
-static coroutine tcpframesender (fmill_sock self) {
+static coroutine void tcpframesender (fmill_sock self) {
   int fd = millsockfd((void *)self->msock);
 
 wait_out_trigger:
