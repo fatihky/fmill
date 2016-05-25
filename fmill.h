@@ -37,5 +37,6 @@ fmill_sock fmill_sock_connect (char *addr);
 int fmill_send (fmill_sock self, struct frm_frame *fr);
 int fmill_send2 (fmill_sock self, char *msg, int size);
 chan fmill_eventsch (fmill_sock self);
+int fmill_sock_dead (fmill_sock conn);
 
 #endif

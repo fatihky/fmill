@@ -144,6 +144,16 @@ static coroutine void tcpacceptor(fmill_sock self) {
   printf ("stopped accepting\n");
 }
 
+static void fmill_sock_send_conn_close_msg (fmill_sock self) {
+  if (!self->active)
+    return;
+  struct fmill_event ev;
+  ev.fr = NULL;
+  ev.conn = self;
+  self->active = 0;
+  chs (self->events, struct fmill_event, ev);
+}
+
 static coroutine void tcpframer (fmill_sock self) {
   int fd = millsockfd((void *)self->msock);
 
@@ -169,13 +179,10 @@ wait_in:
       frm_cbuf_unref (cbuf);
       goto wait_in;
     }
-    if (nread == 0)
-      assert (0 && "handle connection close");
-    if (nread < 0) {
-      printf ("[fmill] read failed\n");
-      printf ("nread: %zd\n", nread);
-      printf ("errno: %d %s\n", errno, strerror (errno));
-      assert (0 && "handle nread < 0");
+    if (nread <= 0) {
+      frm_cbuf_unref (cbuf);
+      fmill_sock_send_conn_close_msg (self);
+      return;
     }
 
     int rc = frm_parser_parse (&self->parser, cbuf, nread);
@@ -242,11 +249,9 @@ wait_out:
       goto wait_out;
     }
 
-    if (nwritten < 0) {
-      printf ("[fmill] write failed\n");
-      printf ("nwritten: %zd\n", nwritten);
-      printf ("errno: %d %s\n", errno, strerror (errno));
-      assert (0 && "handle nwritten < 0");
+    if (nwritten <= 0) {
+      fmill_sock_send_conn_close_msg (self);
+      return;
     }
 
     frm_out_frame_list_written (&self->ol, nwritten);
@@ -378,4 +383,8 @@ int fmill_send2 (fmill_sock self, char *msg, int size) {
 
 chan fmill_eventsch (fmill_sock self) {
   return self->events;
+}
+
+int fmill_sock_dead (fmill_sock self) {
+  return self->active == 0;
 }
