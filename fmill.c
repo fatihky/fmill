@@ -89,7 +89,7 @@ static int fmill_parse_addr (char *addr, char **addrcpy, int *tcpp, int *port) {
   return 0;
 }
 
-static fmill_sock fmill_sock_new() {
+static fmill_sock fmill_sock_new(chan ch) {
   fmill_sock self = malloc (sizeof (struct fmill_sock));
   if (!self)
     return NULL;
@@ -98,7 +98,10 @@ static fmill_sock fmill_sock_new() {
   self->tcp = -1;
   self->waiting_out_trigger = 0;
   self->msock = NULL;
-  self->events = chmake(struct fmill_event, 0);
+  if (ch)
+    self->events = ch;
+  else
+    self->events = chmake(struct fmill_event, 0);
   if (!self->events)
     goto fail1;
   self->out_trigger = chmake(int, 0);
@@ -128,7 +131,7 @@ static coroutine void tcpacceptor(fmill_sock self) {
     tcpsock sock = tcpaccept (self->msock, now() + 10000);
     if (!sock)
       continue;
-    fmill_sock conn = fmill_sock_new();
+    fmill_sock conn = fmill_sock_new(self->events);
     if (!conn)
       continue; // no mem
     conn->msock = sock;
@@ -276,7 +279,7 @@ fmill_sock fmill_sock_bind (char *addr) {
     errno = -rc;
     return NULL;
   }
-  self = fmill_sock_new();
+  self = fmill_sock_new(NULL);
   if (!self) {
     free (addrcpy);
     errno = ENOMEM;
@@ -312,7 +315,7 @@ fmill_sock fmill_sock_connect (char *addr) {
     errno = -rc;
     return NULL;
   }
-  self = fmill_sock_new();
+  self = fmill_sock_new(NULL);
   if (!self) {
     free (addrcpy);
     errno = ENOMEM;
